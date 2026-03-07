@@ -3,6 +3,11 @@
 ## Features
 
 - [ ] Zoom support (scroll-zoom, pinch-to-zoom)
+  - Add `scale`, `MIN_SCALE` (0.25), `MAX_SCALE` (8) state variables
+  - Replace all `PX` usage with `PX * scale` in `draw()` and `cellAt()`
+  - Wheel handler: zoom toward cursor (`pan = cursor - (cursor - pan) * (newScale / oldScale)`)
+  - Pinch-to-zoom: track two-finger touch distance/center in `touchstart`/`touchmove`
+  - Hide grid lines when `cellSize < 4` to avoid noise at small zoom levels
 - [ ] Undo / redo history stack
 - [ ] Export artwork as PNG
 - [ ] Touch / mobile support for panning and drawing
