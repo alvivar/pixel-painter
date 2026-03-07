@@ -20,6 +20,8 @@
   <body>
     <script>
       const PX = 24;
+      const MIN_SCALE = 0.25;
+      const MAX_SCALE = 8;
       const PAL = [
         "#000000", "#1D2B53", "#7E2553", "#008751",
         "#AB5236", "#5F574F", "#C2C3C7", "#FFF1E8",
@@ -39,6 +41,7 @@
       let saveTimer = 0;
       let panX = 0, panY = 0;
       let panStartX, panStartY, panOriginX, panOriginY;
+      let scale = 1;
       let dirty = true;
 
       function resize() {
@@ -48,34 +51,37 @@
       }
 
       function draw() {
+        const S = PX * scale;
         const w = canvas.width, h = canvas.height;
         const gridH = h - BAR_H;
         ctx.fillStyle = "#fff";
         ctx.fillRect(0, 0, w, gridH);
 
-        const ox = panX % PX;
-        const oy = panY % PX;
+        const ox = panX % S;
+        const oy = panY % S;
 
-        // Grid lines
-        ctx.strokeStyle = "#ccc";
-        ctx.beginPath();
-        for (let x = ox; x <= w; x += PX) {
-          ctx.moveTo(x, 0);
-          ctx.lineTo(x, gridH);
+        // Grid lines — hide when zoomed out far enough to avoid visual noise
+        if (S >= 4) {
+          ctx.strokeStyle = "#ccc";
+          ctx.beginPath();
+          for (let x = ox; x <= w; x += S) {
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, gridH);
+          }
+          for (let y = oy; y <= gridH; y += S) {
+            ctx.moveTo(0, y);
+            ctx.lineTo(w, y);
+          }
+          ctx.stroke();
         }
-        for (let y = oy; y <= gridH; y += PX) {
-          ctx.moveTo(0, y);
-          ctx.lineTo(w, y);
-        }
-        ctx.stroke();
 
         // Filled cells — batch by color to minimize fillStyle changes
         const buckets = new Array(PAL.length);
         for (const [k, ci] of filled) {
           const sep = k.indexOf(",");
-          const sx = +k.slice(0, sep) * PX + panX;
-          const sy = +k.slice(sep + 1) * PX + panY;
-          if (sx + PX > 0 && sx < w && sy + PX > 0 && sy < gridH) {
+          const sx = +k.slice(0, sep) * S + panX;
+          const sy = +k.slice(sep + 1) * S + panY;
+          if (sx + S > 0 && sx < w && sy + S > 0 && sy < gridH) {
             (buckets[ci] || (buckets[ci] = [])).push(sx, sy);
           }
         }
@@ -83,7 +89,7 @@
           const b = buckets[i];
           if (!b) continue;
           ctx.fillStyle = PAL[i];
-          for (let j = 0; j < b.length; j += 2) ctx.fillRect(b[j], b[j + 1], PX, PX);
+          for (let j = 0; j < b.length; j += 2) ctx.fillRect(b[j], b[j + 1], S, S);
         }
 
         // Palette bar
@@ -101,10 +107,9 @@
       }
 
       function cellAt(e) {
-        const wx = e.clientX - panX;
-        const wy = e.clientY - panY;
-        const cx = Math.floor(wx / PX);
-        const cy = Math.floor(wy / PX);
+        const S = PX * scale;
+        const cx = Math.floor((e.clientX - panX) / S);
+        const cy = Math.floor((e.clientY - panY) / S);
         return cx + "," + cy;
       }
 
@@ -174,9 +179,63 @@
 
       canvas.addEventListener("wheel", (e) => {
         e.preventDefault();
-        panX -= e.deltaX;
-        panY -= e.deltaY;
+        if (e.shiftKey) {
+          // Shift+scroll → pan
+          panX -= e.deltaX || e.deltaY;
+        } else {
+          // Scroll → zoom toward cursor
+          const zoomFactor = Math.pow(0.995, e.deltaY);
+          const newScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, scale * zoomFactor));
+          const ratio = newScale / scale;
+          panX = e.clientX - (e.clientX - panX) * ratio;
+          panY = e.clientY - (e.clientY - panY) * ratio;
+          scale = newScale;
+        }
         dirty = true;
+      }, { passive: false });
+
+      // Pinch-to-zoom
+      let lastTouchDist = 0;
+      let lastTouchCenter = null;
+
+      canvas.addEventListener("touchstart", (e) => {
+        if (e.touches.length === 2) {
+          e.preventDefault();
+          const [a, b] = e.touches;
+          lastTouchDist = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+          lastTouchCenter = {
+            x: (a.clientX + b.clientX) / 2,
+            y: (a.clientY + b.clientY) / 2,
+          };
+        }
+      }, { passive: false });
+
+      canvas.addEventListener("touchmove", (e) => {
+        if (e.touches.length === 2) {
+          e.preventDefault();
+          const [a, b] = e.touches;
+          const dist = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+          const center = {
+            x: (a.clientX + b.clientX) / 2,
+            y: (a.clientY + b.clientY) / 2,
+          };
+
+          // Zoom toward pinch center
+          const ratio = dist / lastTouchDist;
+          const newScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, scale * ratio));
+          const actualRatio = newScale / scale;
+          panX = center.x - (center.x - panX) * actualRatio;
+          panY = center.y - (center.y - panY) * actualRatio;
+
+          // Pan with two-finger drag
+          panX += center.x - lastTouchCenter.x;
+          panY += center.y - lastTouchCenter.y;
+
+          scale = newScale;
+          lastTouchDist = dist;
+          lastTouchCenter = center;
+          dirty = true;
+        }
       }, { passive: false });
 
       load();

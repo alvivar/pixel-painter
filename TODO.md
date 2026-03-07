@@ -2,7 +2,7 @@
 
 ## Features
 
-- [ ] Zoom support (scroll-zoom, pinch-to-zoom)
+- [x] Zoom support (scroll-zoom, pinch-to-zoom)
   - Add `scale`, `MIN_SCALE` (0.25), `MAX_SCALE` (8) state variables
   - Replace all `PX` usage with `PX * scale` in `draw()` and `cellAt()`
   - Wheel handler: zoom toward cursor (`pan = cursor - (cursor - pan) * (newScale / oldScale)`)
