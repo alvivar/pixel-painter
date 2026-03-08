@@ -10,12 +10,16 @@ A minimal, zero-dependency pixel art editor that runs entirely in the browser.
 
 - **Paint & Erase** — Left-click to paint, right-click to erase
 - **16-Color Palette** — Classic PICO-8 color palette
+- **Eyedropper** — Alt+click to pick a color from the canvas
 - **Infinite Canvas** — Pan with middle-click drag or Shift+scroll
 - **Zoom** — Scroll wheel to zoom toward cursor (0.25×–8×), pinch-to-zoom on touch
+- **Undo / Redo** — Full stroke-level undo (Ctrl+Z) and redo (Ctrl+Y or Ctrl+Shift+Z)
+- **Export PNG** — Export the viewport (Ctrl+E) or tight-cropped artwork (Ctrl+Alt+E)
 - **Touch Support** — Pinch to zoom/pan; painting is suppressed during two-finger gestures
 - **Auto-Save** — Work is saved to localStorage automatically (debounced)
 - **Resume** — Re-opens centered on the last painted pixel
 - **Smooth Strokes** — Uses coalesced pointer events for fluid drawing
+- **Help Overlay** — Press `?` to see all keyboard shortcuts
 - **Single File** — No build step, no dependencies, just open and draw
 
 ## Getting Started
@@ -29,23 +33,32 @@ npx serve .
 
 ## Controls
 
-| Action     | Input                               |
-| ---------- | ----------------------------------- |
-| Paint      | Left-click / drag                   |
-| Erase      | Right-click / drag                  |
-| Zoom       | Scroll wheel (zooms toward cursor)  |
-| Pan        | Middle-click drag or Shift+scroll   |
-| Pick color | Click the palette bar at the bottom |
-| Pinch      | Two-finger pinch to zoom + drag     |
+| Action          | Input                              |
+| --------------- | ---------------------------------- |
+| Paint           | Left-click / drag                  |
+| Erase           | Right-click / drag                 |
+| Eyedropper      | Alt + click                        |
+| Pick color      | Click the palette bar              |
+| Zoom            | Scroll wheel (zooms toward cursor) |
+| Pan             | Middle-click drag or Shift+scroll  |
+| Pinch           | Two-finger pinch to zoom + drag    |
+| Undo            | Ctrl+Z                             |
+| Redo            | Ctrl+Y / Ctrl+Shift+Z              |
+| Export viewport | Ctrl+E                             |
+| Export artwork  | Ctrl+Alt+E                         |
+| Help            | ?                                  |
 
 ## How It Works
 
-The entire app is a single HTML file (~370 lines) using the Canvas API:
+The entire app is a single HTML file (~580 lines) using the Canvas API:
 
 - **Grid** — Base cell size is 24px, scaled by a zoom factor (0.25×–8×). Grid lines auto-hide when cells are smaller than 4px to reduce visual noise
 - **Storage** — Cells are stored in a `Map<string, {x, y, ci}>` with pre-parsed coordinates so the draw loop never parses strings. Saves are debounced (300ms) and serialized as streaming JSON — no intermediate array, no `JSON.stringify`
 - **Rendering** — A `requestAnimationFrame` loop redraws only when state changes (dirty flag). Filled cells are batched by color to minimize `fillStyle` changes. Only on-screen cells are drawn
+- **Undo/Redo** — Each paint/erase stroke is captured as a `Map<key, { before, after }>` delta. Undo replays `before` states, redo replays `after` states. The redo stack is cleared on new strokes
+- **Export** — Viewport export captures the on-screen canvas minus the palette bar. Artwork export computes a tight bounding box and renders 1:1 pixel art to a temporary canvas
 - **Palette** — Rendered to an offscreen canvas and blitted via `drawImage`; redrawn only on color change or resize. The selection indicator automatically picks a black or white outline based on luminance
+- **Help Overlay** — Canvas-rendered shortcut panel driven by a declarative `HELP_BINDINGS` array. Uses PICO-8 palette colors for styling; dismisses on click or Escape
 - **Touch** — Pinch-to-zoom and two-finger pan are handled via touch events. An `activeTouches` counter suppresses painting during multi-finger gestures
 
 ## Palette
