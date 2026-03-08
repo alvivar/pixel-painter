@@ -372,22 +372,31 @@
         { passive: false },
       );
 
-      function exportPNG() {
-        if (filled.size === 0) return;
-        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-        for (const [, cell] of filled) {
-          if (cell.x < minX) minX = cell.x;
-          if (cell.y < minY) minY = cell.y;
-          if (cell.x > maxX) maxX = cell.x;
-          if (cell.y > maxY) maxY = cell.y;
-        }
+      function exportPNG(viewportMode) {
         const exp = document.createElement("canvas");
-        exp.width = maxX - minX + 1;
-        exp.height = maxY - minY + 1;
         const ectx = exp.getContext("2d");
-        for (const [, cell] of filled) {
-          ectx.fillStyle = PAL[cell.ci];
-          ectx.fillRect(cell.x - minX, cell.y - minY, 1, 1);
+        if (viewportMode) {
+          // Export exactly what's on screen, minus the palette bar
+          const gridH = canvas.height - BAR_H;
+          exp.width = canvas.width;
+          exp.height = gridH;
+          ectx.drawImage(canvas, 0, 0, canvas.width, gridH, 0, 0, canvas.width, gridH);
+        } else {
+          // Export tight-cropped 1:1 pixel art
+          if (filled.size === 0) return;
+          let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+          for (const [, cell] of filled) {
+            if (cell.x < minX) minX = cell.x;
+            if (cell.y < minY) minY = cell.y;
+            if (cell.x > maxX) maxX = cell.x;
+            if (cell.y > maxY) maxY = cell.y;
+          }
+          exp.width = maxX - minX + 1;
+          exp.height = maxY - minY + 1;
+          for (const [, cell] of filled) {
+            ectx.fillStyle = PAL[cell.ci];
+            ectx.fillRect(cell.x - minX, cell.y - minY, 1, 1);
+          }
         }
         const a = document.createElement("a");
         a.download = "pixel-art.png";
@@ -421,9 +430,12 @@
 
       window.addEventListener("keydown", (e) => {
         if (e.key === "Alt") canvas.style.cursor = "crosshair";
-        if ((e.ctrlKey || e.metaKey) && e.key === "e") {
+        if ((e.ctrlKey || e.metaKey) && e.altKey && e.key === "e") {
           e.preventDefault();
-          exportPNG();
+          exportPNG(false);
+        } else if ((e.ctrlKey || e.metaKey) && !e.altKey && e.key === "e") {
+          e.preventDefault();
+          exportPNG(true);
         } else if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) {
           e.preventDefault();
           undo();
