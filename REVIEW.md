@@ -89,28 +89,24 @@ Two-finger touch fires both `touchstart`/`touchmove` (for pinch zoom) and `point
 
 ## Fix Batches
 
-### Batch A — Correctness bugs (#8, #9, #10)
+### ~~Batch A — Correctness bugs (#8, #9, #10)~~ ✅ Done
 
-Fix what's broken first. All three are isolated and won't conflict with each other.
+- ~~**#8** Shift+scroll panning: restore both axes (`panX -= e.deltaX; panY -= e.deltaY`)~~ ✅
+- ~~**#9** Pinch/pointer conflict: add `touch-action: none` CSS, track `activeTouches` count, suppress `applyPaint` when ≥ 2 touches~~ ✅
+- ~~**#10** Negative modulo: `((panX % S) + S) % S` in draw~~ ✅
 
-- **#8** Shift+scroll panning: restore both axes (`panX -= e.deltaX; panY -= e.deltaY`)
-- **#9** Pinch/pointer conflict: add `touch-action: none` CSS, track active touch count, suppress `applyPaint` when ≥ 2 touches
-- **#10** Negative modulo: `((panX % S) + S) % S` in draw
+### ~~Batch B — Key format & data access (#1, #4, #6)~~ ✅ Done
 
-### Batch B — Key format & data access (#1, #4, #6)
+- ~~**#1** `filled` now stores `{ x, y, ci }` objects — draw loop reads coords directly, zero string parsing per frame~~ ✅
+- ~~**#6** Centralized key format into `makeKey(x,y)` / `parseKey(k)` helpers; `cellAt()` returns `{ key, x, y }`~~ ✅
+- ~~**#4** Cached `cellSize = PX * scale`, updated in wheel and pinch handlers; `draw()`, `cellAt()`, and centering all read `cellSize`~~ ✅
+- Save format unchanged (`[key, ci]` pairs) — fully backward-compatible with existing localStorage data
+- `lastModified` string replaced with numeric `lastModifiedX` / `lastModifiedY` — centering block no longer parses
 
-These are all tangled in the same `"x,y"` string key format. Changing the key representation touches `cellAt()`, `draw()`, `save()`, `load()`, and the centering block — best done together.
+### ~~Batch C — Event handler cleanup (#5, #7)~~ ✅ Done
 
-- **#1** Switch `filled` from `Map<string, ci>` to `Map<string, {x, y, ci}>` (or numeric keys) so the draw loop avoids parsing
-- **#6** Centralize key format into `makeKey(x,y)` / `parseKey(k)` helpers (or eliminate parsing entirely if using numeric keys)
-- **#4** Cache `PX * scale` into a `cellSize` variable, updated wherever `scale` changes
-
-### Batch C — Event handler cleanup (#5, #7)
-
-Small, mechanical refactors that reduce fragility and duplication.
-
-- **#5** Extract `clampScale(s)` helper, replace 3 inline clamp sites
-- **#7** Replace `onresize` / `onpointerup` globals with `addEventListener`
+- ~~**#5** Extracted `clampScale(s)` helper, replaced 2 inline clamp sites (wheel and pinch-to-zoom handlers)~~ ✅
+- ~~**#7** Replaced `onpointerup` and `onresize` globals with `window.addEventListener`~~ ✅
 
 ### Batch D — Rendering optimization (#2, #3)
 

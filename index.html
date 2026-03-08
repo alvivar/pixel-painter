@@ -57,6 +57,9 @@
         const sep = k.indexOf(",");
         return [+k.slice(0, sep), +k.slice(sep + 1)];
       }
+      function clampScale(s) {
+        return Math.min(MAX_SCALE, Math.max(MIN_SCALE, s));
+      }
 
       let mode = null; // 'paint' | 'erase' | 'pan'
       let color = 0;
@@ -229,12 +232,12 @@
         }
       };
 
-      onpointerup = (e) => {
+      window.addEventListener("pointerup", (e) => {
         if (e.pointerType === "touch")
           activeTouches = Math.max(0, activeTouches - 1);
         if (mode === "paint" || mode === "erase") scheduleSave();
         mode = null;
-      };
+      });
       canvas.oncontextmenu = (e) => e.preventDefault();
 
       canvas.addEventListener(
@@ -248,10 +251,7 @@
           } else {
             // Scroll → zoom toward cursor
             const zoomFactor = Math.pow(0.995, e.deltaY);
-            const newScale = Math.min(
-              MAX_SCALE,
-              Math.max(MIN_SCALE, scale * zoomFactor),
-            );
+            const newScale = clampScale(scale * zoomFactor);
             const ratio = newScale / scale;
             panX = e.clientX - (e.clientX - panX) * ratio;
             panY = e.clientY - (e.clientY - panY) * ratio;
@@ -303,10 +303,7 @@
 
             // Zoom toward pinch center
             const ratio = dist / lastTouchDist;
-            const newScale = Math.min(
-              MAX_SCALE,
-              Math.max(MIN_SCALE, scale * ratio),
-            );
+            const newScale = clampScale(scale * ratio);
             const actualRatio = newScale / scale;
             panX = center.x - (center.x - panX) * actualRatio;
             panY = center.y - (center.y - panY) * actualRatio;
@@ -326,7 +323,7 @@
       );
 
       load();
-      onresize = resize;
+      window.addEventListener("resize", resize);
       resize();
 
       // Center on last modified pixel
