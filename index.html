@@ -178,16 +178,18 @@
       ];
 
       function drawHelp() {
-        const w = canvas.width, h = canvas.height;
+        const w = canvas.width,
+          h = canvas.height;
         // Backdrop
         ctx.fillStyle = "rgba(0,0,0,0.75)";
         ctx.fillRect(0, 0, w, h);
 
         // Panel dimensions
         const lineH = 28;
-        const padX = 28, padY = 24;
+        const padX = 28,
+          padY = 24;
         const titleH = 36;
-        const panelW = 420;
+        const panelW = 500;
         const panelH = titleH + padY * 2 + HELP_BINDINGS.length * lineH;
         const px = Math.round((w - panelW) / 2);
         const py = Math.round((h - panelH) / 2);
@@ -288,7 +290,10 @@
       function applyPaint(e) {
         const { key, x, y } = cellAt(e);
         if (currentStroke && !currentStroke.has(key)) {
-          currentStroke.set(key, { before: filled.get(key) || null, after: null });
+          currentStroke.set(key, {
+            before: filled.get(key) || null,
+            after: null,
+          });
         }
         if (mode === "erase") {
           filled.delete(key);
@@ -461,11 +466,24 @@
           const gridH = canvas.height - BAR_H;
           exp.width = canvas.width;
           exp.height = gridH;
-          ectx.drawImage(canvas, 0, 0, canvas.width, gridH, 0, 0, canvas.width, gridH);
+          ectx.drawImage(
+            canvas,
+            0,
+            0,
+            canvas.width,
+            gridH,
+            0,
+            0,
+            canvas.width,
+            gridH,
+          );
         } else {
           // Export tight-cropped 1:1 pixel art
           if (filled.size === 0) return;
-          let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+          let minX = Infinity,
+            minY = Infinity,
+            maxX = -Infinity,
+            maxY = -Infinity;
           for (const [, cell] of filled) {
             if (cell.x < minX) minX = cell.x;
             if (cell.y < minY) minY = cell.y;
