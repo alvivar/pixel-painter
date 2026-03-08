@@ -12,7 +12,7 @@
 - [x] Export artwork as PNG
 - [ ] Touch / mobile support for panning and drawing
 - [ ] Flood fill (paint bucket) — press `G` to toggle, click to fill contiguous region
-- [ ] Eyedropper — hold `Alt` + click to pick color from an existing pixel
+- [x] Eyedropper — hold `Alt` + click to pick color from an existing pixel
 - [ ] Symmetry / mirror mode — toggle horizontal and/or vertical axis mirroring for sprite work
 - [ ] Line tool — hold `Shift` while drawing to snap to straight lines (horizontal, vertical, 45°)
 - [ ] Adjustable brush size — `[` / `]` keys to cycle 1×1, 2×2, 3×3
