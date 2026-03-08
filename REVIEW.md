@@ -108,9 +108,8 @@ Two-finger touch fires both `touchstart`/`touchmove` (for pinch zoom) and `point
 - ~~**#5** Extracted `clampScale(s)` helper, replaced 2 inline clamp sites (wheel and pinch-to-zoom handlers)~~ ✅
 - ~~**#7** Replaced `onpointerup` and `onresize` globals with `window.addEventListener`~~ ✅
 
-### Batch D — Rendering optimization (#2, #3)
+### ~~Batch D — Rendering optimization (#2, #3)~~ ✅ Done
 
-Low-priority polish. Only worth doing if large drawings cause visible jank.
-
-- **#2** Offscreen canvas for palette bar; `CanvasPattern` for grid at current scale
-- **#3** Streaming JSON build for save, or accept current cost
+- ~~**#2** Palette bar rendered to offscreen canvas, redrawn only on color change or resize, blitted via `drawImage`~~ ✅
+- Grid `CanvasPattern` skipped — fractional `cellSize` (e.g. `24 × 0.33 = 7.92`) causes visible drift between pattern grid lines and actual cell positions after many repetitions; the grid loop is already O(screen) not O(cells) so there's no scaling concern
+- ~~**#3** `save()` builds JSON string directly — no intermediate array, no `JSON.stringify`; output format unchanged for backward compatibility~~ ✅
