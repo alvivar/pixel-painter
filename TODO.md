@@ -9,7 +9,7 @@
   - Pinch-to-zoom: track two-finger touch distance/center in `touchstart`/`touchmove`
   - Hide grid lines when `cellSize < 4` to avoid noise at small zoom levels
 - [x] Undo / redo history stack
-- [ ] Export artwork as PNG
+- [x] Export artwork as PNG
 - [ ] Touch / mobile support for panning and drawing
 - [ ] Flood fill (paint bucket) — press `G` to toggle, click to fill contiguous region
 - [ ] Eyedropper — hold `Alt` + click to pick color from an existing pixel
