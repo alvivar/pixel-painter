@@ -108,6 +108,7 @@
         // Grid lines — hide when zoomed out far enough to avoid visual noise
         if (S >= 4) {
           ctx.strokeStyle = "#ccc";
+          ctx.lineWidth = 0.5;
           ctx.beginPath();
           for (let x = ox; x <= w; x += S) {
             ctx.moveTo(x, 0);
