@@ -14,6 +14,7 @@
       }
       canvas {
         display: block;
+        touch-action: none;
       }
     </style>
   </head>
@@ -57,6 +58,7 @@
       let scale = 1;
       let lastModified = null; // "x,y" key of last painted cell
       let dirty = true;
+      let activeTouches = 0;
 
       function resize() {
         canvas.width = innerWidth;
@@ -72,8 +74,8 @@
         ctx.fillStyle = "#fff";
         ctx.fillRect(0, 0, w, gridH);
 
-        const ox = panX % S;
-        const oy = panY % S;
+        const ox = ((panX % S) + S) % S;
+        const oy = ((panY % S) + S) % S;
 
         // Grid lines — hide when zoomed out far enough to avoid visual noise
         if (S >= 4) {
@@ -173,6 +175,8 @@
       }
 
       canvas.onpointerdown = (e) => {
+        if (e.pointerType === "touch") activeTouches++;
+        if (activeTouches >= 2) return; // suppress painting during pinch
         const pi = hitPalette(e);
         if (pi >= 0 && e.button === 0) {
           color = pi;
@@ -193,7 +197,7 @@
       };
 
       canvas.onpointermove = (e) => {
-        if (!mode) return;
+        if (!mode || activeTouches >= 2) return;
         if (mode === "pan") {
           panX = panOriginX + (e.clientX - panStartX);
           panY = panOriginY + (e.clientY - panStartY);
@@ -207,7 +211,9 @@
         }
       };
 
-      onpointerup = () => {
+      onpointerup = (e) => {
+        if (e.pointerType === "touch")
+          activeTouches = Math.max(0, activeTouches - 1);
         if (mode === "paint" || mode === "erase") scheduleSave();
         mode = null;
       };
@@ -219,7 +225,8 @@
           e.preventDefault();
           if (e.shiftKey) {
             // Shift+scroll → pan
-            panX -= e.deltaX || e.deltaY;
+            panX -= e.deltaX;
+            panY -= e.deltaY;
           } else {
             // Scroll → zoom toward cursor
             const zoomFactor = Math.pow(0.995, e.deltaY);
