@@ -236,6 +236,16 @@
           dirty = true;
           return;
         }
+        // Eyedropper: Alt+click picks color from pixel under cursor
+        if (e.altKey && e.button === 0) {
+          const { key } = cellAt(e);
+          const cell = filled.get(key);
+          if (cell) {
+            color = cell.ci;
+            dirty = true;
+          }
+          return;
+        }
         if (e.button === 1) {
           mode = "pan";
           panStartX = e.clientX;
@@ -387,6 +397,7 @@
       }
 
       window.addEventListener("keydown", (e) => {
+        if (e.key === "Alt") canvas.style.cursor = "crosshair";
         if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) {
           e.preventDefault();
           undo();
@@ -397,6 +408,9 @@
           e.preventDefault();
           redo();
         }
+      });
+      window.addEventListener("keyup", (e) => {
+        if (e.key === "Alt") canvas.style.cursor = "";
       });
 
       load();
