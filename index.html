@@ -79,6 +79,11 @@
       let dirty = true;
       let activeTouches = 0;
 
+      // Undo / redo
+      const undoStack = [];
+      const redoStack = [];
+      let currentStroke = null; // Map<key, { before, after }>
+
       function resize() {
         canvas.width = innerWidth;
         canvas.height = innerHeight;
@@ -206,10 +211,16 @@
 
       function applyPaint(e) {
         const { key, x, y } = cellAt(e);
+        if (currentStroke && !currentStroke.has(key)) {
+          currentStroke.set(key, { before: filled.get(key) || null, after: null });
+        }
         if (mode === "erase") {
           filled.delete(key);
+          if (currentStroke) currentStroke.get(key).after = null;
         } else {
-          filled.set(key, { x, y, ci: color });
+          const cell = { x, y, ci: color };
+          filled.set(key, cell);
+          if (currentStroke) currentStroke.get(key).after = cell;
           lastModifiedX = x;
           lastModifiedY = y;
         }
@@ -234,6 +245,7 @@
           canvas.setPointerCapture(e.pointerId);
         } else if (e.clientY < canvas.height - BAR_H) {
           mode = e.button === 2 ? "erase" : "paint";
+          currentStroke = new Map();
           applyPaint(e);
         }
       };
@@ -256,7 +268,14 @@
       window.addEventListener("pointerup", (e) => {
         if (e.pointerType === "touch")
           activeTouches = Math.max(0, activeTouches - 1);
-        if (mode === "paint" || mode === "erase") scheduleSave();
+        if (mode === "paint" || mode === "erase") {
+          if (currentStroke && currentStroke.size > 0) {
+            undoStack.push(currentStroke);
+            redoStack.length = 0;
+          }
+          currentStroke = null;
+          scheduleSave();
+        }
         mode = null;
       });
       canvas.oncontextmenu = (e) => e.preventDefault();
@@ -342,6 +361,43 @@
         },
         { passive: false },
       );
+
+      function undo() {
+        if (!undoStack.length) return;
+        const stroke = undoStack.pop();
+        for (const [key, delta] of stroke) {
+          if (delta.before) filled.set(key, delta.before);
+          else filled.delete(key);
+        }
+        redoStack.push(stroke);
+        dirty = true;
+        scheduleSave();
+      }
+
+      function redo() {
+        if (!redoStack.length) return;
+        const stroke = redoStack.pop();
+        for (const [key, delta] of stroke) {
+          if (delta.after) filled.set(key, delta.after);
+          else filled.delete(key);
+        }
+        undoStack.push(stroke);
+        dirty = true;
+        scheduleSave();
+      }
+
+      window.addEventListener("keydown", (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) {
+          e.preventDefault();
+          undo();
+        } else if (
+          ((e.ctrlKey || e.metaKey) && e.key === "y") ||
+          ((e.ctrlKey || e.metaKey) && e.key === "z" && e.shiftKey)
+        ) {
+          e.preventDefault();
+          redo();
+        }
+      });
 
       load();
       window.addEventListener("resize", resize);

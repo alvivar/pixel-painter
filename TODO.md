@@ -8,7 +8,7 @@
   - Wheel handler: zoom toward cursor (`pan = cursor - (cursor - pan) * (newScale / oldScale)`)
   - Pinch-to-zoom: track two-finger touch distance/center in `touchstart`/`touchmove`
   - Hide grid lines when `cellSize < 4` to avoid noise at small zoom levels
-- [ ] Undo / redo history stack
+- [x] Undo / redo history stack
 - [ ] Export artwork as PNG
 - [ ] Touch / mobile support for panning and drawing
 
