@@ -78,6 +78,7 @@
         lastModifiedY = null;
       let dirty = true;
       let activeTouches = 0;
+      let showHelp = false;
 
       // Undo / redo
       const undoStack = [];
@@ -139,6 +140,8 @@
         // Palette bar — blit from offscreen canvas
         if (color !== palColor) drawPalette();
         ctx.drawImage(palCanvas, 0, gridH);
+
+        if (showHelp) drawHelp();
       }
 
       function drawPalette() {
@@ -159,6 +162,79 @@
         palCtx.strokeRect(color * sw + 2, 2, sw - 4, BAR_H - 4);
         palCtx.lineWidth = 1;
         palColor = color;
+      }
+
+      const HELP_BINDINGS = [
+        ["Left Click", "Paint pixel"],
+        ["Right Click", "Erase pixel"],
+        ["Middle Click / Shift+Scroll", "Pan canvas"],
+        ["Scroll", "Zoom in / out"],
+        ["Alt + Click", "Eyedropper (pick color)"],
+        ["Ctrl+Z", "Undo"],
+        ["Ctrl+Y / Ctrl+Shift+Z", "Redo"],
+        ["Ctrl+E", "Export viewport as PNG"],
+        ["Ctrl+Alt+E", "Export artwork as PNG"],
+        ["?", "Toggle this help"],
+      ];
+
+      function drawHelp() {
+        const w = canvas.width, h = canvas.height;
+        // Backdrop
+        ctx.fillStyle = "rgba(0,0,0,0.75)";
+        ctx.fillRect(0, 0, w, h);
+
+        // Panel dimensions
+        const lineH = 28;
+        const padX = 28, padY = 24;
+        const titleH = 36;
+        const panelW = 420;
+        const panelH = titleH + padY * 2 + HELP_BINDINGS.length * lineH;
+        const px = Math.round((w - panelW) / 2);
+        const py = Math.round((h - panelH) / 2);
+
+        // Panel background
+        ctx.fillStyle = "#1D2B53";
+        ctx.beginPath();
+        ctx.roundRect(px, py, panelW, panelH, 8);
+        ctx.fill();
+        ctx.strokeStyle = "#29ADFF";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.lineWidth = 1;
+
+        // Title
+        ctx.fillStyle = "#FFF1E8";
+        ctx.font = "bold 16px monospace";
+        ctx.textBaseline = "top";
+        ctx.fillText("Keyboard Shortcuts", px + padX, py + padY);
+
+        // Bindings
+        ctx.font = "13px monospace";
+        const startY = py + padY + titleH;
+        const keyColX = px + padX;
+        const descColX = px + 230;
+
+        for (let i = 0; i < HELP_BINDINGS.length; i++) {
+          const [key, desc] = HELP_BINDINGS[i];
+          const rowY = startY + i * lineH;
+
+          // Key badge
+          const metrics = ctx.measureText(key);
+          const badgeW = metrics.width + 12;
+          const badgeH = 20;
+          ctx.fillStyle = "#29ADFF";
+          ctx.beginPath();
+          ctx.roundRect(keyColX, rowY, badgeW, badgeH, 4);
+          ctx.fill();
+
+          ctx.fillStyle = "#1D2B53";
+          ctx.textBaseline = "top";
+          ctx.fillText(key, keyColX + 6, rowY + 3);
+
+          // Description
+          ctx.fillStyle = "#C2C3C7";
+          ctx.fillText(desc, descColX, rowY + 3);
+        }
       }
 
       function cellAt(e) {
@@ -228,6 +304,11 @@
       }
 
       canvas.onpointerdown = (e) => {
+        if (showHelp) {
+          showHelp = false;
+          dirty = true;
+          return;
+        }
         if (e.pointerType === "touch") activeTouches++;
         if (activeTouches >= 2) return; // suppress painting during pinch
         const pi = hitPalette(e);
@@ -429,6 +510,17 @@
       }
 
       window.addEventListener("keydown", (e) => {
+        if (e.key === "?" && !e.ctrlKey && !e.metaKey) {
+          showHelp = !showHelp;
+          dirty = true;
+          return;
+        }
+        if (e.key === "Escape" && showHelp) {
+          showHelp = false;
+          dirty = true;
+          return;
+        }
+        if (showHelp) return; // swallow other keys while overlay is open
         if (e.key === "Alt") canvas.style.cursor = "crosshair";
         if ((e.ctrlKey || e.metaKey) && e.altKey && e.key === "e") {
           e.preventDefault();

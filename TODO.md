@@ -24,5 +24,5 @@
 - [ ] Handle localStorage quota errors gracefully for large drawings
 - [ ] Use `addEventListener` instead of implicit global event handlers (`onresize`, `onpointerup`)
 - [ ] Cache grid lines as a repeating pattern instead of redrawing every frame
-- [ ] Keyboard shortcuts overlay — press `?` to show translucent help panel listing all bindings
+- [x] Keyboard shortcuts overlay — press `?` to show translucent help panel listing all bindings
 - [ ] Palette swap support — load alternate palettes (GameBoy, CGA, NES) in addition to PICO-8
