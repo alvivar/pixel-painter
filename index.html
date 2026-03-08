@@ -278,13 +278,11 @@
         const raw = localStorage.getItem(SAVE_KEY);
         if (!raw) return;
         const data = JSON.parse(raw);
-        // Support both old format (array) and new format (object)
-        const cells = Array.isArray(data) ? data : data.cells;
-        for (const [k, ci] of cells) {
+        for (const [k, ci] of data.cells) {
           const [x, y] = parseKey(k);
           filled.set(k, { x, y, ci });
         }
-        if (!Array.isArray(data) && data.lastModified) {
+        if (data.lastModified) {
           [lastModifiedX, lastModifiedY] = parseKey(data.lastModified);
         }
       }
