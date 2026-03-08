@@ -171,7 +171,7 @@
         ["Scroll", "Zoom in / out"],
         ["Alt + Click", "Eyedropper (pick color)"],
         ["Ctrl+Z", "Undo"],
-        ["Ctrl+Y / Ctrl+Shift+Z", "Redo"],
+        ["Ctrl+Shift+Z", "Redo"],
         ["Ctrl+E", "Export viewport as PNG"],
         ["Ctrl+Alt+E", "Export artwork as PNG"],
         ["?", "Toggle this help"],
@@ -550,8 +550,7 @@
           e.preventDefault();
           undo();
         } else if (
-          ((e.ctrlKey || e.metaKey) && e.key === "y") ||
-          ((e.ctrlKey || e.metaKey) && e.key === "z" && e.shiftKey)
+          (e.ctrlKey || e.metaKey) && e.key === "Z" && e.shiftKey
         ) {
           e.preventDefault();
           redo();

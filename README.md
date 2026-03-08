@@ -13,7 +13,7 @@ A minimal, zero-dependency pixel art editor that runs entirely in the browser.
 - **Eyedropper** — Alt+click to pick a color from the canvas
 - **Infinite Canvas** — Pan with middle-click drag or Shift+scroll
 - **Zoom** — Scroll wheel to zoom toward cursor (0.25×–8×), pinch-to-zoom on touch
-- **Undo / Redo** — Full stroke-level undo (Ctrl+Z) and redo (Ctrl+Y or Ctrl+Shift+Z)
+- **Undo / Redo** — Full stroke-level undo (Ctrl+Z) and redo (Ctrl+Shift+Z)
 - **Export PNG** — Export the viewport (Ctrl+E) or tight-cropped artwork (Ctrl+Alt+E)
 - **Touch Support** — Pinch to zoom/pan; painting is suppressed during two-finger gestures
 - **Auto-Save** — Work is saved to localStorage automatically (debounced)
@@ -43,7 +43,7 @@ npx serve .
 | Pan             | Middle-click drag or Shift+scroll  |
 | Pinch           | Two-finger pinch to zoom + drag    |
 | Undo            | Ctrl+Z                             |
-| Redo            | Ctrl+Y / Ctrl+Shift+Z              |
+| Redo            | Ctrl+Shift+Z                       |
 | Export viewport | Ctrl+E                             |
 | Export artwork  | Ctrl+Alt+E                         |
 | Help            | ?                                  |
