@@ -348,7 +348,7 @@
       };
 
       canvas.onpointermove = (e) => {
-        if (!mode || activeTouches >= 2) return;
+        if (!mode || activeTouches >= 2 || showHelp) return;
         if (mode === "pan") {
           panX = panOriginX + (e.clientX - panStartX);
           panY = panOriginY + (e.clientY - panStartY);
@@ -391,6 +391,7 @@
         "wheel",
         (e) => {
           e.preventDefault();
+          if (showHelp) return;
           zoomAt(e.clientX, e.clientY, Math.pow(0.995, e.deltaY));
         },
         { passive: false },
@@ -424,6 +425,7 @@
         (e) => {
           if (e.touches.length === 2) {
             e.preventDefault();
+            if (showHelp) return;
             const [a, b] = e.touches;
             const dist = Math.hypot(
               a.clientX - b.clientX,
