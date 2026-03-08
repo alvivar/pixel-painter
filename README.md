@@ -11,7 +11,7 @@ A minimal, zero-dependency pixel art editor that runs entirely in the browser.
 - **Paint & Erase** — Left-click to paint, right-click to erase
 - **16-Color Palette** — Classic PICO-8 color palette
 - **Eyedropper** — Alt+click to pick a color from the canvas
-- **Infinite Canvas** — Pan with middle-click drag or Shift+scroll
+- **Infinite Canvas** — Pan with middle-click drag
 - **Zoom** — Scroll wheel to zoom toward cursor (0.25×–8×), pinch-to-zoom on touch
 - **Undo / Redo** — Full stroke-level undo (Ctrl+Z) and redo (Ctrl+Shift+Z)
 - **Export PNG** — Export the viewport (Ctrl+E) or tight-cropped artwork (Ctrl+Alt+E)
@@ -40,7 +40,7 @@ npx serve .
 | Eyedropper      | Alt + click                        |
 | Pick color      | Click the palette bar              |
 | Zoom            | Scroll wheel (zooms toward cursor) |
-| Pan             | Middle-click drag or Shift+scroll  |
+| Pan             | Middle-click drag                  |
 | Pinch           | Two-finger pinch to zoom + drag    |
 | Undo            | Ctrl+Z                             |
 | Redo            | Ctrl+Shift+Z                       |

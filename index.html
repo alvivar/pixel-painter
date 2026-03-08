@@ -167,7 +167,7 @@
       const HELP_BINDINGS = [
         ["Left Click", "Paint pixel"],
         ["Right Click", "Erase pixel"],
-        ["Middle Click / Shift+Scroll", "Pan canvas"],
+        ["Middle Click", "Pan canvas"],
         ["Scroll", "Zoom in / out"],
         ["Alt + Click", "Eyedropper (pick color)"],
         ["Ctrl+Z", "Undo"],
@@ -380,20 +380,14 @@
         "wheel",
         (e) => {
           e.preventDefault();
-          if (e.shiftKey) {
-            // Shift+scroll → pan
-            panX -= e.deltaX;
-            panY -= e.deltaY;
-          } else {
-            // Scroll → zoom toward cursor
-            const zoomFactor = Math.pow(0.995, e.deltaY);
-            const newScale = clampScale(scale * zoomFactor);
-            const ratio = newScale / scale;
-            panX = e.clientX - (e.clientX - panX) * ratio;
-            panY = e.clientY - (e.clientY - panY) * ratio;
-            scale = newScale;
-            cellSize = PX * scale;
-          }
+          // Scroll → zoom toward cursor
+          const zoomFactor = Math.pow(0.995, e.deltaY);
+          const newScale = clampScale(scale * zoomFactor);
+          const ratio = newScale / scale;
+          panX = e.clientX - (e.clientX - panX) * ratio;
+          panY = e.clientY - (e.clientY - panY) * ratio;
+          scale = newScale;
+          cellSize = PX * scale;
           dirty = true;
         },
         { passive: false },
