@@ -73,7 +73,6 @@
         panY = 0;
       let panStartX, panStartY, panOriginX, panOriginY;
       let scale = 1;
-      let cellSize = PX * scale;
       let lastModifiedX = null,
         lastModifiedY = null;
       let dirty = true;
@@ -81,6 +80,7 @@
       let showHelp = false;
 
       // Undo / redo
+      const MAX_UNDO = 200;
       const undoStack = [];
       const redoStack = [];
       let currentStroke = null; // Map<key, { before, after }>
@@ -95,7 +95,7 @@
       }
 
       function draw() {
-        const S = cellSize;
+        const S = PX * scale;
         const w = canvas.width,
           h = canvas.height;
         const gridH = h - BAR_H;
@@ -240,8 +240,9 @@
       }
 
       function cellAt(e) {
-        const x = Math.floor((e.clientX - panX) / cellSize);
-        const y = Math.floor((e.clientY - panY) / cellSize);
+        const S = PX * scale;
+        const x = Math.floor((e.clientX - panX) / S);
+        const y = Math.floor((e.clientY - panY) / S);
         return { key: makeKey(x, y), x, y };
       }
 
@@ -289,7 +290,7 @@
 
       function applyPaint(e) {
         const { key, x, y } = cellAt(e);
-        if (currentStroke && !currentStroke.has(key)) {
+        if (!currentStroke.has(key)) {
           currentStroke.set(key, {
             before: filled.get(key) || null,
             after: null,
@@ -297,11 +298,11 @@
         }
         if (mode === "erase") {
           filled.delete(key);
-          if (currentStroke) currentStroke.get(key).after = null;
+          currentStroke.get(key).after = null;
         } else {
           const cell = { x, y, ci: color };
           filled.set(key, cell);
-          if (currentStroke) currentStroke.get(key).after = cell;
+          currentStroke.get(key).after = cell;
           lastModifiedX = x;
           lastModifiedY = y;
         }
@@ -367,6 +368,7 @@
         if (mode === "paint" || mode === "erase") {
           if (currentStroke && currentStroke.size > 0) {
             undoStack.push(currentStroke);
+            if (undoStack.length > MAX_UNDO) undoStack.shift();
             redoStack.length = 0;
           }
           currentStroke = null;
@@ -376,19 +378,20 @@
       });
       canvas.oncontextmenu = (e) => e.preventDefault();
 
+      function zoomAt(focusX, focusY, factor) {
+        const newScale = clampScale(scale * factor);
+        const ratio = newScale / scale;
+        panX = focusX - (focusX - panX) * ratio;
+        panY = focusY - (focusY - panY) * ratio;
+        scale = newScale;
+        dirty = true;
+      }
+
       canvas.addEventListener(
         "wheel",
         (e) => {
           e.preventDefault();
-          // Scroll → zoom toward cursor
-          const zoomFactor = Math.pow(0.995, e.deltaY);
-          const newScale = clampScale(scale * zoomFactor);
-          const ratio = newScale / scale;
-          panX = e.clientX - (e.clientX - panX) * ratio;
-          panY = e.clientY - (e.clientY - panY) * ratio;
-          scale = newScale;
-          cellSize = PX * scale;
-          dirty = true;
+          zoomAt(e.clientX, e.clientY, Math.pow(0.995, e.deltaY));
         },
         { passive: false },
       );
@@ -431,19 +434,11 @@
               y: (a.clientY + b.clientY) / 2,
             };
 
-            // Zoom toward pinch center
-            const ratio = dist / lastTouchDist;
-            const newScale = clampScale(scale * ratio);
-            const actualRatio = newScale / scale;
-            panX = center.x - (center.x - panX) * actualRatio;
-            panY = center.y - (center.y - panY) * actualRatio;
+            zoomAt(center.x, center.y, dist / lastTouchDist);
 
             // Pan with two-finger drag
             panX += center.x - lastTouchCenter.x;
             panY += center.y - lastTouchCenter.y;
-
-            scale = newScale;
-            cellSize = PX * scale;
             lastTouchDist = dist;
             lastTouchCenter = center;
             dirty = true;
@@ -497,28 +492,23 @@
         a.click();
       }
 
-      function undo() {
-        if (!undoStack.length) return;
-        const stroke = undoStack.pop();
+      function applyStroke(from, to, prop) {
+        if (!from.length) return;
+        const stroke = from.pop();
         for (const [key, delta] of stroke) {
-          if (delta.before) filled.set(key, delta.before);
+          if (delta[prop]) filled.set(key, delta[prop]);
           else filled.delete(key);
         }
-        redoStack.push(stroke);
+        to.push(stroke);
         dirty = true;
         scheduleSave();
       }
 
+      function undo() {
+        applyStroke(undoStack, redoStack, "before");
+      }
       function redo() {
-        if (!redoStack.length) return;
-        const stroke = redoStack.pop();
-        for (const [key, delta] of stroke) {
-          if (delta.after) filled.set(key, delta.after);
-          else filled.delete(key);
-        }
-        undoStack.push(stroke);
-        dirty = true;
-        scheduleSave();
+        applyStroke(redoStack, undoStack, "after");
       }
 
       window.addEventListener("keydown", (e) => {
@@ -543,9 +533,7 @@
         } else if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) {
           e.preventDefault();
           undo();
-        } else if (
-          (e.ctrlKey || e.metaKey) && e.key === "Z" && e.shiftKey
-        ) {
+        } else if ((e.ctrlKey || e.metaKey) && e.key === "Z" && e.shiftKey) {
           e.preventDefault();
           redo();
         }
@@ -560,9 +548,10 @@
 
       // Center on last modified pixel
       if (lastModifiedX != null) {
-        panX = Math.round(canvas.width / 2 - (lastModifiedX + 0.5) * cellSize);
+        const S = PX * scale;
+        panX = Math.round(canvas.width / 2 - (lastModifiedX + 0.5) * S);
         panY = Math.round(
-          (canvas.height - BAR_H) / 2 - (lastModifiedY + 0.5) * cellSize,
+          (canvas.height - BAR_H) / 2 - (lastModifiedY + 0.5) * S,
         );
         dirty = true;
       }
