@@ -48,7 +48,16 @@
       const ctx = canvas.getContext("2d");
 
       const SAVE_KEY = "pixelpainter";
-      const filled = new Map(); // key -> color index
+      const filled = new Map(); // key -> { x, y, ci }
+
+      function makeKey(x, y) {
+        return x + "," + y;
+      }
+      function parseKey(k) {
+        const sep = k.indexOf(",");
+        return [+k.slice(0, sep), +k.slice(sep + 1)];
+      }
+
       let mode = null; // 'paint' | 'erase' | 'pan'
       let color = 0;
       let saveTimer = 0;
@@ -56,7 +65,9 @@
         panY = 0;
       let panStartX, panStartY, panOriginX, panOriginY;
       let scale = 1;
-      let lastModified = null; // "x,y" key of last painted cell
+      let cellSize = PX * scale;
+      let lastModifiedX = null,
+        lastModifiedY = null;
       let dirty = true;
       let activeTouches = 0;
 
@@ -67,7 +78,7 @@
       }
 
       function draw() {
-        const S = PX * scale;
+        const S = cellSize;
         const w = canvas.width,
           h = canvas.height;
         const gridH = h - BAR_H;
@@ -94,12 +105,11 @@
 
         // Filled cells — batch by color to minimize fillStyle changes
         const buckets = new Array(PAL.length);
-        for (const [k, ci] of filled) {
-          const sep = k.indexOf(",");
-          const sx = +k.slice(0, sep) * S + panX;
-          const sy = +k.slice(sep + 1) * S + panY;
+        for (const [, cell] of filled) {
+          const sx = cell.x * S + panX;
+          const sy = cell.y * S + panY;
           if (sx + S > 0 && sx < w && sy + S > 0 && sy < gridH) {
-            (buckets[ci] || (buckets[ci] = [])).push(sx, sy);
+            (buckets[cell.ci] || (buckets[cell.ci] = [])).push(sx, sy);
           }
         }
         for (let i = 0; i < PAL.length; i++) {
@@ -129,10 +139,9 @@
       }
 
       function cellAt(e) {
-        const S = PX * scale;
-        const cx = Math.floor((e.clientX - panX) / S);
-        const cy = Math.floor((e.clientY - panY) / S);
-        return cx + "," + cy;
+        const x = Math.floor((e.clientX - panX) / cellSize);
+        const y = Math.floor((e.clientY - panY) / cellSize);
+        return { key: makeKey(x, y), x, y };
       }
 
       function hitPalette(e) {
@@ -141,9 +150,13 @@
       }
 
       function save() {
+        const cells = [];
+        for (const [k, v] of filled) cells.push([k, v.ci]);
+        const lastModified =
+          lastModifiedX != null ? makeKey(lastModifiedX, lastModifiedY) : null;
         localStorage.setItem(
           SAVE_KEY,
-          JSON.stringify({ cells: [...filled], lastModified }),
+          JSON.stringify({ cells, lastModified }),
         );
       }
 
@@ -158,18 +171,23 @@
         const data = JSON.parse(raw);
         // Support both old format (array) and new format (object)
         const cells = Array.isArray(data) ? data : data.cells;
-        for (const [k, ci] of cells) filled.set(k, ci);
-        if (!Array.isArray(data) && data.lastModified)
-          lastModified = data.lastModified;
+        for (const [k, ci] of cells) {
+          const [x, y] = parseKey(k);
+          filled.set(k, { x, y, ci });
+        }
+        if (!Array.isArray(data) && data.lastModified) {
+          [lastModifiedX, lastModifiedY] = parseKey(data.lastModified);
+        }
       }
 
       function applyPaint(e) {
-        const k = cellAt(e);
+        const { key, x, y } = cellAt(e);
         if (mode === "erase") {
-          filled.delete(k);
+          filled.delete(key);
         } else {
-          filled.set(k, color);
-          lastModified = k;
+          filled.set(key, { x, y, ci: color });
+          lastModifiedX = x;
+          lastModifiedY = y;
         }
         dirty = true;
       }
@@ -238,6 +256,7 @@
             panX = e.clientX - (e.clientX - panX) * ratio;
             panY = e.clientY - (e.clientY - panY) * ratio;
             scale = newScale;
+            cellSize = PX * scale;
           }
           dirty = true;
         },
@@ -297,6 +316,7 @@
             panY += center.y - lastTouchCenter.y;
 
             scale = newScale;
+            cellSize = PX * scale;
             lastTouchDist = dist;
             lastTouchCenter = center;
             dirty = true;
@@ -310,13 +330,11 @@
       resize();
 
       // Center on last modified pixel
-      if (lastModified) {
-        const sep = lastModified.indexOf(",");
-        const cx = +lastModified.slice(0, sep);
-        const cy = +lastModified.slice(sep + 1);
-        const S = PX * scale;
-        panX = Math.round(canvas.width / 2 - (cx + 0.5) * S);
-        panY = Math.round((canvas.height - BAR_H) / 2 - (cy + 0.5) * S);
+      if (lastModifiedX != null) {
+        panX = Math.round(canvas.width / 2 - (lastModifiedX + 0.5) * cellSize);
+        panY = Math.round(
+          (canvas.height - BAR_H) / 2 - (lastModifiedY + 0.5) * cellSize,
+        );
         dirty = true;
       }
 
