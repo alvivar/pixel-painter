@@ -19,7 +19,7 @@ A minimal, zero-dependency pixel art editor that runs entirely in the browser.
 - **Auto-Save** — Work is saved to localStorage automatically (debounced)
 - **Resume** — Re-opens centered on the last painted pixel
 - **Smooth Strokes** — Uses coalesced pointer events for fluid drawing
-- **Help Overlay** — Press `?` to see all keyboard shortcuts
+- **Help Overlay** — Press `?` to see all keyboard shortcuts; locks all other input until dismissed
 - **Single File** — No build step, no dependencies, just open and draw
 
 ## Getting Started
@@ -50,15 +50,15 @@ npx serve .
 
 ## How It Works
 
-The entire app is a single HTML file (~580 lines) using the Canvas API:
+The entire app is a single HTML file (~570 lines) using the Canvas API:
 
 - **Grid** — Base cell size is 24px, scaled by a zoom factor (0.25×–8×). Grid lines auto-hide when cells are smaller than 4px to reduce visual noise
 - **Storage** — Cells are stored in a `Map<string, {x, y, ci}>` with pre-parsed coordinates so the draw loop never parses strings. Saves are debounced (300ms) and serialized as streaming JSON — no intermediate array, no `JSON.stringify`
 - **Rendering** — A `requestAnimationFrame` loop redraws only when state changes (dirty flag). Filled cells are batched by color to minimize `fillStyle` changes. Only on-screen cells are drawn
-- **Undo/Redo** — Each paint/erase stroke is captured as a `Map<key, { before, after }>` delta. Undo replays `before` states, redo replays `after` states. The redo stack is cleared on new strokes
+- **Undo/Redo** — Each paint/erase stroke is captured as a `Map<key, { before, after }>` delta. Undo replays `before` states, redo replays `after` states. The redo stack is cleared on new strokes. The undo stack is capped at 200 entries to bound memory
 - **Export** — Viewport export captures the on-screen canvas minus the palette bar. Artwork export computes a tight bounding box and renders 1:1 pixel art to a temporary canvas
 - **Palette** — Rendered to an offscreen canvas and blitted via `drawImage`; redrawn only on color change or resize. The selection indicator automatically picks a black or white outline based on luminance
-- **Help Overlay** — Canvas-rendered shortcut panel driven by a declarative `HELP_BINDINGS` array. Uses PICO-8 palette colors for styling; dismisses on click or Escape
+- **Help Overlay** — Canvas-rendered shortcut panel driven by a declarative `HELP_BINDINGS` array. Uses PICO-8 palette colors for styling. While open, all painting, zooming, and panning are locked; dismisses on click, Escape, or `?`
 - **Touch** — Pinch-to-zoom and two-finger pan are handled via touch events. An `activeTouches` counter suppresses painting during multi-finger gestures
 
 ## Palette
