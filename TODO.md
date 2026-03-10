@@ -11,7 +11,7 @@
 - [x] Undo / redo history stack
 - [x] Export artwork as PNG
 - [x] Eyedropper — hold `Alt` + click to pick color from an existing pixel
-- [ ] Touch / mobile support for panning and drawing
+- [x] Touch / mobile support for panning and drawing
 - [ ] Flood fill (paint bucket) — press `G` to toggle, click to fill contiguous region
 - [ ] Symmetry / mirror mode — toggle horizontal and/or vertical axis mirroring for sprite work
 - [ ] Line tool — hold `Shift` while drawing to snap to straight lines (horizontal, vertical, 45°)
@@ -22,7 +22,7 @@
 ## Improvements
 
 - [ ] Handle localStorage quota errors gracefully for large drawings
-- [ ] Use `addEventListener` instead of implicit global event handlers (`onresize`, `onpointerup`)
+- [ ] Use `addEventListener` instead of implicit event handlers (`onpointerdown`, `onpointermove`, `oncontextmenu`)
 - [ ] Cache grid lines as a repeating pattern instead of redrawing every frame
 - [x] Keyboard shortcuts overlay — press `?` to show translucent help panel listing all bindings
 - [ ] Palette swap support — load alternate palettes (GameBoy, CGA, NES) in addition to PICO-8
